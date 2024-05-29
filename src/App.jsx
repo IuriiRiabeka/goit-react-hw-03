@@ -1,84 +1,49 @@
-import { Children, useState,useEffect } from 'react'
-import './App.css'
-import Description from './components/Description/Description';
-import Options
-      from './components/Options/Options';
-import Feedback from './components/Feedback/Feedback';
+import { useEffect, useState } from 'react';
 
-import Notification from './components/Notification/Notification';
+import './App.css';
+import ContactList from './components/ContactList/ContactList';
+import SearchBox from './components/SearchBox/SearchBox';
+import ContactForm from './components/ContactForm/ContactForm';
 
+import contactsData from './data/contacts.json';
 
-const App = () => {
-	
- const [feed, setFeed] = useState(() => {
-    const savedFeed = window.localStorage.getItem("saved-feed");
+const LS_CONTACTS_KEY = 'initial-contacts';
 
-    if (savedFeed !== null) {
-      return JSON.parse(savedFeed);
-    }
-    return {
-      good: 0,
-      neutral: 0,
-      bad: 0,
-    };
-  });
-
-  useEffect(() => {
-    window.localStorage.setItem("saved-feed", JSON.stringify(feed));
-  }, [feed]);
-
-  const totalFeedback = feed.good + feed.neutral + feed.bad;
-  const PositiveFeedback = Math.round((feed.good / totalFeedback) * 100);
-
-  function updateFeedback(feedbackType) {
-    switch (feedbackType) {
-      case "good":
-        setFeed({
-          ...feed,
-          good: feed.good + 1,
-        });
-        break;
-
-      case "neutral":
-        setFeed({
-          ...feed,
-          neutral: feed.neutral + 1,
-        });
-        break;
-
-      case "bad":
-        setFeed({
-          ...feed,
-          bad: feed.bad + 1,
-        });
-        break;
-    }
-  }
-
-  function resetState() {
-    setFeed({
-      good: 0,
-      neutral: 0,
-      bad: 0,
-    });
-  }
-
-
-  return (
-    <>
-              <Description/>
-			<Options
-			 info={updateFeedback}
-        clear={resetState}
-        total={totalFeedback}></Options>
-			  {totalFeedback === 0 && <Notification />}
-			{totalFeedback !== 0 && (
-				<Feedback feedback={feed}
-					total={totalFeedback}
-					positive={PositiveFeedback} ></Feedback>)}
-    </>
-  );
+const initialContacts = () => {
+	const localStorageContacts = localStorage.getItem(LS_CONTACTS_KEY);
+	return localStorageContacts ? JSON.parse(localStorageContacts) : contactsData;
 };
 
+function App() {
+	const [contacts, setContacts] = useState(initialContacts);
+	const [filter, setFilter] = useState('');
 
-export default App
+	useEffect(() => {
+		localStorage.setItem(LS_CONTACTS_KEY, JSON.stringify(contacts));
+	}, [contacts]);
+
+	const handleAddContact = (newContact) => {
+		setContacts((prevContacts) => [...prevContacts, newContact]);
+	};
+
+	const handleDeleteContact = (id) => {
+		setContacts((prevContacts) =>
+			prevContacts.filter((contact) => contact.id !== id)
+		);
+	};
+
+	const filteredContacts = contacts.filter((contact) =>
+		contact.name.toLowerCase().includes(filter.toLowerCase())
+	);
+
+	return (
+		<>
+			<h1>Phone book</h1>
+			<ContactForm onAdd={handleAddContact} />
+			<SearchBox value={filter} onFilter={setFilter} />
+			<ContactList contacts={filteredContacts} onDelete={handleDeleteContact} />
+		</>
+	);
+}
+
+export default App;
